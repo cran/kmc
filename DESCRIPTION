@@ -1,14 +1,16 @@
 Package: kmc
-Version: 0.1-2
-Title: Kaplan - Meier estimator with constraints for right censored
-        data -- a recursive computational algorithm
-Author: Yifan Yang <yifan.yang@uky.edu> , Mai Zhou<mai@ms.uky.edu>
+Version: 0.2-2
+Title: Kaplan-Meier Estimator with Constraints for Right Censored Data
+        -- a Recursive Computational Algorithm
+Author: Yifan Yang [aut,cre], Mai Zhou [aut]
 Maintainer: Yifan Yang <yifan.yang@uky.edu>
-Description: Calculate NPMLE with constraints for right censored data. This package give a recursive computational algorithm for the "constrained" Kaplan- Meier estimator. The constraint is assumed given in linear estimating equations or mean functions. We also illustrate how this leads to the empirical likelihood ratio test with right censored data. EM algorithm (emplik) is used to get the initial value. 
-License: LGPL-3
-Depends: R (>= 2.13.1), compiler, rootSolve, emplik, Rcpp
+Description: Linearly constrained Kaplan-Meier estimator for right censored data. This version does empirical likelihood ratio test with right censored data with linear type constraint and hypothesis testing for coefficients in accelerated failure time model.
+License: GPL (>= 2)
+Depends: R (>= 2.13.1), compiler, rootSolve, emplik
+URL: https://github.com/yfyang86/kmc
 LinkingTo: Rcpp
-Packaged: 2013-12-25 07:29:57 UTC; Yifan
 NeedsCompilation: yes
+BugReports: https://github.com/yfyang86/kmc
+Packaged: 2015-11-22 18:51:28 UTC; inseven
 Repository: CRAN
-Date/Publication: 2013-12-25 09:15:26
+Date/Publication: 2015-11-23 12:20:35

@@ -2,11 +2,10 @@
 \alias{kmc.solve}
 \title{
 Calculate NPMLE with constriants for right censored data
-    %%  ~~function to do ... ~~
 }
 \description{
-This function calculate the Kaplan-Meier estimator with mean constraints recursively. 
-\deqn{El(F)=\prod_{i=1}{n}(\Delta F(T_i))^{\delta_i}(1-F(T_i))^{1-\delta_i}}
+This function calculate the Kaplan-Meier estimator with mean constraints recursively.
+\deqn{El(F)=\prod_{i=1}^{n}(\Delta F(T_i))^{\delta_i}(1-F(T_i))^{1-\delta_i}}
 with constraints
 \deqn{\sum_i g(T_i)\Delta F(T_i)=0,\quad,i=1,2,...}
 It uses Lagrange multiplier directly.
@@ -25,7 +24,7 @@ kmc.solve(x, d, g, em.boost = T, using.num = T, using.Fortran =
       Status, 0: right censored; 1 uncensored
 }
   \item{g}{
-list of contraint functions. It should be a list of functions list(f1,f2,...) 
+list of contraint functions. It should be a list of functions list(f1,f2,...)
 }
   \item{em.boost}{
   	 logical asking whether to use EM to get the initial value, default=TRUE. See 'Details' for EM control.
@@ -53,7 +52,7 @@ Unspecified yet.
 }
 }
 \details{
-The development version won't check the constraint is proper or not. Besides, a extrordinary large number will be generated when numeric method/constraint(s) fails.
+The development version won't check the constraint is proper or not. Besides, an extrordinary large number will be generated when numeric method/constraint(s) fails.
 }
 \value{
  a list with the following components:
@@ -80,12 +79,14 @@ The development version won't check the constraint is proper or not. Besides, a 
  }
 }
 \references{
-    A Recursive Formula for the Kaplan-Meier Estimator with Constraint
-%% ~put references to the literature/web site here ~
+Zhou, M. and Yang, Y. (2015).
+A recursive formula for the Kaplan-Meier estimator with mean constraints and its application to empirical likelihood
+\emph{Computational Statistics}
+\bold{Online ISSN} 1613-9658.
 }
+
 \author{
     Mai Zhou(mai@ms.uky.edu), Yifan Yang(yifan.yang@uky.edu)
-%%  ~~who you are~~
 }
 
 
@@ -100,7 +101,7 @@ d <- c( 1,   1, 0, 1, 0, 1, 1, 1, 1, 0, 0,   1)               # status censored/
 # dim =1
 #################
 
-f<-function(x) { x-3.7}                                       # \sum f(ti) wi ~ 0 
+f<-function(x) { x-3.7}                                       # \sum f(ti) wi ~ 0
 g=list( f=f) ;                                                #define constraint as a list
 
 kmc.solve( x,d,g) ;                                           #using default
@@ -110,9 +111,9 @@ kmc.solve( x,d,g,using.C=TRUE) ;                              #using Rcpp
 # dim =2
 #################
 
-myfun5 <- function( x)  { 
+myfun5 <- function( x)  {
  x^2-16.5
-} 
+}
 g=list( f1=f,f2=myfun5) ;                                     #define constraint as a list
 kmc.solve( x,d,g) ->re0;
 print(re0);                                                   #print method, plain ASCII
@@ -120,5 +121,3 @@ print(re0,5);                                                 #print method, dig
 print(re0,type='md');                                         #print method, output GIT Markdown
 #summary(re0) is under developing.
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.

@@ -1,6 +1,10 @@
 kmc.el<-function(delta,omega,S){
   n<-length(S)
-    sum(llog(omega[delta==1],1/n^2))+sum(llog(S[delta==0],1/n^2))
+    sum(llog(omega[delta==1],1/n^2/100))+sum(llog(S[delta==0],1/n^2/100))
+  omega[delta==1] -> val1
+  S[delta==0]     -> val2
+  eps=1e-7
+    sum(llog(val1,.001/n^2)[val1>eps])+sum(llog(val2,.001/n^2)[val2>eps])
 }
 
 kmc.clean <- function(kmc.time,delta){
@@ -18,8 +22,15 @@ kmc.clean <- function(kmc.time,delta){
     kmc.time=kmc.time[FirstUnCenLocation:n];
   }
   delta[length(kmc.time)]=1;
-  return (list(kmc.time=kmc.time,delta=delta));
+  #U=kmc_find0loc(delta);
+#  cat("len: ",U);
+#if (U==0) stop("Not enough event points!");
+#  return (list(kmc.time=kmc.time[1:U],delta=delta[1:U]));
+ return (list(kmc.time=kmc.time,delta=delta));
 }
+
+
+
 
 omega.lambda<-cmpfun(function(kmc.time,delta,lambda,g,gt.mat){
   #iter
@@ -50,15 +61,16 @@ kmc.data <- cmpfun(function(kmc.time,delta,lambda,g, gt.mat,using.C=F){
   #my omega contains 0, it is length of n
   #need S omega
   if(using.C) {
-      tmp<-lambdaoo(kmc.time,delta,lambda, gt.mat)
+      #tmp<-lambdaoo(kmc.time,delta,lambda,gt.mat);
+      return( kmcdata_rcpp(kmctime=kmc.time,delta=delta,lambda=lambda,gtmat=gt.mat));
   }else{
       tmp<-omega.lambda(kmc.time,delta,lambda,g, gt.mat)
   }
   b= delta * tmp$omega;
 #check.constriant=apply(t(b*t(tmp$gt)),1,sum);
-  check.constriant=rowSums(t(b*t(tmp$gt)));	
-  gama=1/(tmp$S);  
-  return (list(omega=tmp$omega,gamma=tmp$gamma,S=tmp$S,chk=check.constriant));
+  check.constriant=rowSums(t(b*t(tmp$gt)));
+  gama=1/(tmp$S);
+  return (list(omega=tmp$omega,gamma=gama,S=tmp$S,chk=check.constriant));
 })
 
 omega.lambda12<-cmpfun(function(kmc.time,delta,lambda,g, gt.mat){
@@ -102,8 +114,8 @@ kmc.data12 <- function(kmc.time,delta,lambda,g, gt.mat){
   tmp<-omega.lambda12(kmc.time,delta,lambda,g, gt.mat)
   b= delta * tmp$omega;
   #check.constriant=apply(t(b*t(tmp$gt)),1,sum);
-  check.constriant=rowSums(t(b*t(tmp$gt)));  
-  gama=1/(tmp$S);  
+  check.constriant=rowSums(t(b*t(tmp$gt)));
+  gama=1/(tmp$S);
   return (list(omega=tmp$omega,gamma=tmp$gamma,S=tmp$S,chk=check.constriant,domega=tmp$omega.dev));
 }
 
@@ -132,15 +144,21 @@ kmc.solve<-function(x,d,g,em.boost=T,using.num=T,using.Fortran=T,using.C=F,tmp.t
     ##    Is the feasible region = NULL?
     
     kmc.comb<-function(x){
-      kmc.data(kmc.time,delta,lambda=x,g, gt.mat= gt.mat,using.C=using.C)-> re;
-      re$chk
+      #OLD kmc.data(kmc.time,delta,lambda=x,g, gt.mat= gt.mat,using.C=using.C)-> re;
+            kmc.data(kmc.time,delta,lambda=x,g, gt.mat= gt.mat,using.C=using.C)-> re;
+        re$chk
     }
     
     kmc.comb12<-Vectorize(function(x){
-      kmc.data12(kmc.time,delta,lambda=x,g, gt.mat= gt.mat)-> re;
+        kmc.data12(kmc.time,delta,lambda=x,g, gt.mat= gt.mat)-> re;
       list(x=re$chk,dev=re$domega);
     })
     
+	kmc.comb123<-function(x){
+        kmc_routine4(lambda=x,delta=delta,gtmat=gt.mat)->re;
+        return(re);
+    }
+	
     multiroot.nr<-function(f_,xinit,it=nr.it,C=nr.c,trace=FALSE,tol=1E-9){
       if (C*tol>1) C=ceiling(1/tol/10);
       re=xinit;
@@ -186,7 +204,7 @@ kmc.solve<-function(x,d,g,em.boost=T,using.num=T,using.Fortran=T,using.C=F,tmp.t
   }else{init.lam=rep(0,length(g))}
   
 	if (using.num || ( length(g)!=1) ){
-	  multiroot(kmc.comb,start=init.lam,ctol=rtol,useFortran =using.Fortran)$root -> lambda
+	  multiroot(kmc.comb123,start=init.lam,ctol=rtol,useFortran =using.Fortran)$root -> lambda
 	  
 	}else{
 	  multiroot.nr(f_=kmc.comb12,xinit=init.lam,it=15,C=1,FALSE,tol=rtol) -> lambda;
@@ -215,6 +233,70 @@ kmc.solve<-function(x,d,g,em.boost=T,using.num=T,using.Fortran=T,using.C=F,tmp.t
     class(re.tmp)<-"kmcS3";
 	return(re.tmp);
 }
+
+kmc.bjtest<-function(
+  y, d, x, beta,init.st="naive"
+){
+  
+  n <- length(y)
+  x <- as.matrix(x)
+  xdim <- dim(x)
+  if (xdim[1] != n) 
+    stop("check dim of x")
+  if (length(beta) != xdim[2]) 
+    stop("check dim of x and beta")
+  e <- y - as.vector(x %*% beta)
+  ordere <- order(e, -d)
+  esort <- e[ordere]
+  dsort <- d[ordere]
+  xsort <- as.matrix(x[ordere, ])
+  dsort[length(dsort)] <- 1
+  temp0 <- WKM(esort, dsort, zc = 1:n)
+  pKM <- temp0$jump
+  temp <- redistF(y = esort, d = dsort, Fdist = pKM)
+  weight <- temp$weight/n
+  A <- matrix(0, ncol = xdim[2], nrow = n)
+  for (i in 1:n) if (dsort[i] == 1) {
+    A[i, ] <- t(as.matrix(weight[1:i, i])) %*% xsort[1:i,]
+    A[i, ] <- A[i, ]/pKM[i]
+  }
+  
+  gt.matrix = t(A*esort);
+  delta = dsort;
+  kmc.time = esort;
+  
+  kmc.comb123<-function(x){
+    kmc_routine4(lambda=x,delta=delta,gtmat=gt.matrix)->re;
+    return(re);
+  }
+  
+  u.lambda2<-function(re=el.cen.EM2.kmc(x=kmc.time,d=delta,fun= function(t, q) {
+        t * q
+    },mu=c(0,0),maxit=5,debug.kmc=F,q=A)){
+    del.loc=which(delta==1)[1:2];
+    tmp=c(0,0);
+    if (del.loc[2]!=2) tmp[2]=sum(as.numeric(delta[1:(del.loc[2]-1)]==0)/( rep(1-re$prob[1],2) ) )
+    UD<-cbind(gt.matrix[1:2,1],gt.matrix[1:2,2])
+    uu.lambda=as.vector(
+      solve(UD)%*%(n-1/re$prob[del.loc]-tmp)
+    )
+    # debug oupur lambda: print(uu.lambda)
+    uu.lambda
+  }
+  
+  if (init.st=="naive"){ init.lam=c(0,0)}else{init.lam=u.lambda2()}
+  cat("init.lam:\t",init.lam,'\tLAM')
+  multiroot(kmc.comb123,start=init.lam,useFortran = T,rtol = 1e-9, atol = 1e-9, ctol = 1e-9)$root -> lambda
+  cat(lambda,'\n')
+  omega.lambda(kmc.time=esort,delta=delta,lambda=lambda,g=NULL,gt.mat=gt.matrix) -> result; ## set lambda=0, it compute KM-est  
+  temp2<-kmc.el(delta,result$omega,result$S)
+  pnew <- result$omega
+  logel1 <- temp0$logel
+  logel2 <- temp2
+  list(prob = pnew, logel = logel1, logel2 = logel2, `-2LLR` = 2 * 
+         (logel1 - logel2))
+}
+
 
 plotkmc2D <-function(resultkmc,flist=list(f1=function(x){x},f2=function(x){x^2}),range0=c(0.2,3,20)){
 	tmp.df=length(resultkmc$g);
