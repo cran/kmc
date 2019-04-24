@@ -11,10 +11,12 @@ kmc.clean <- function(kmc.time,delta){
   #TASK:
   #1 sort T
   #2 the first is uncen!
-  n=length(kmc.time);
-  tmp <- sort(kmc.time,index.return=TRUE);
-  kmc.time=kmc.time[tmp$ix];
-  delta=delta[tmp$ix];
+  
+  n <- length(kmc.time)
+  dataOrder <- order(kmc.time, -delta)
+  kmc.time <- kmc.time[dataOrder]
+  delta <- delta[dataOrder]             ### changed 10/2018
+
   FirstUnCenLocation<-which(delta==1)[1];
   if (FirstUnCenLocation==n) {stop('Only one uncensored point.');}
   if (FirstUnCenLocation!=1){
@@ -36,24 +38,43 @@ omega.lambda<-cmpfun(function(kmc.time,delta,lambda,g,gt.mat){
   #iter
   p=length(g);# the number of constraint
   n=length(kmc.time);
-  uncen.loc<- which(delta==1);
-  cen.loc<- which(delta==0);
-  delta[n]=1
-  #########################################
-
-  u.omega<-numeric(n);
-  u.omega[1]<-1/(n-sum(lambda*gt.mat[,1]));
-  for (k in 2:n){
-    if (delta[k]==1){
-      S <- 1-cumsum(u.omega);#need to update every kmc.time(add in one entry each kmc.time)
-      SCenLoc<-cen.loc[cen.loc%in%(1:(k-1))];
-      S.cen=0;
-      if (length(SCenLoc)!=0){S.cen=sum(1/S[SCenLoc])}
-      u.omega[k]=1/(n-sum(lambda*gt.mat[,k])-S.cen)
-      #cat(':::',sum(omega),'\n')
+  if ( p == 1){
+    ### 1 constraint: offered by Dr Zhou.
+      n <- length(delta)
+      delta[n] <- 1
+      u.omega <- rep(0, n)   ##### all be zero to begin
+      u.omega[1] <- 1/(n - lambda*gt.mat[1])  ## first entry
+      S <- rep(1.0, n)
+      S.cen <- 0
+      for (k in 2:n){
+        if (delta[k]==0){
+          S[k] <- S[k-1] - u.omega[k-1]
+          S.cen <- S.cen + 1/S[k]}
+        else{
+          u.omega[k] <- 1/(n - lambda*gt.mat[k] - S.cen)
+          S[k] <- S[k-1] - u.omega[k-1] }
+      }
+      # return(list(S=S,omega=u.omega, mea= sum(gt*u.omega)))
+      return(list(S=S,omega=u.omega, gt = gt.mat));
+  }else{
+    uncen.loc<- which(delta==1);
+    cen.loc<- which(delta==0);
+    delta[n]=1
+    #########################################
+    u.omega<-numeric(n);
+    u.omega[1]<-1/(n-sum(lambda*gt.mat[,1]));
+    for (k in 2:n){
+      if (delta[k]==1){
+        S <- 1-cumsum(u.omega);#need to update every kmc.time(add in one entry each kmc.time)
+        SCenLoc<-cen.loc[cen.loc%in%(1:(k-1))];
+        S.cen=0;
+        if (length(SCenLoc)!=0){S.cen=sum(1/S[SCenLoc])}
+        u.omega[k]=1/(n-sum(lambda*gt.mat[,k])-S.cen)
+        #cat(':::',sum(omega),'\n')
+      }
     }
-  }
-  return(list(S=S,omega=u.omega,gt=gt.mat));
+    return(list(S=S,omega=u.omega,gt=gt.mat));
+}
 }
 )
 
@@ -82,9 +103,6 @@ omega.lambda12<-cmpfun(function(kmc.time,delta,lambda,g, gt.mat){
   cen.loc<- which(delta==0);
   delta[n]=1
   #########################################
-  #gt.mat<-matrix(0,p,n);
-  #for(i in 1:p){for (j in 1:n) { gt.mat[i,j]=g[[i]](kmc.time[j])}}
-  #for(i in 1:p) gt.mat[i,]=g[[i]](kmc.time);
   u.omega<-numeric(n);
   udev.omega<-matrix(0,p,n);
   u.omega[1]<-1/(n-sum(lambda*gt.mat[,1]));
@@ -212,7 +230,7 @@ kmc.solve<-function(x,d,g,em.boost=T,using.num=T,using.Fortran=T,using.C=F,tmp.t
     if(em.boost & (length(g)==1) ){
 		loglik.null<- WKM(kmc.time,delta)$logel
 	}else{
-        omega.lambda(kmc.time=kmc.time,delta=delta,lambda=0,g=g,gt.mat=gt.mat)->re0; ## set lambda=0, it compute KM-est
+        omega.lambda(kmc.time=kmc.time, delta=delta, lambda=0, g=g, gt.mat=gt.mat)->re0; ## set lambda=0, it compute KM-est
         loglik.null<- kmc.el(delta,re0$omega,re0$S)
  	}
     result<-tryCatch(
@@ -225,10 +243,10 @@ kmc.solve<-function(x,d,g,em.boost=T,using.num=T,using.Fortran=T,using.C=F,tmp.t
 	)
  if (!is.na(result$S[1])){
 			loglik.ha<-kmc.el(delta,result$omega,result$S)
-			re.tmp <- list(loglik.null=loglik.null,loglik.h0=loglik.ha,"-2llr"=-2*(loglik.ha-loglik.null),g=g,time=x,status=d,phat=result$omega,pvalue=1-qchisq(-2*(loglik.ha-loglik.null),df=length(g)),lambda=lambda);
-			if (re.tmp[["-2llr"]]>100) warning('\nThe results may be not feasible!\n');
+			re.tmp <- list(loglik.null=loglik.null,loglik.h0=loglik.ha,"-2LLR"=-2*(loglik.ha-loglik.null),g=g,time=x,status=d,phat=result$omega,pvalue=1-pchisq(-2*(loglik.ha-loglik.null),df=length(g)),lambda=lambda);
+			if (re.tmp[["-2LLR"]]>100) warning('\nThe results may be not feasible!\n');
 		}else{
-			re.tmp <- list(loglik.null=loglik.null,loglik.h0=NA,"-2llr"=NA,g=g,time=x,status=d,phat=NA,pvalue=NA,df=NA,lambda=NA);
+			re.tmp <- list(loglik.null=loglik.null,loglik.h0=NA,"-2LLR"=NA,g=g,time=x,status=d,phat=NA,pvalue=NA,df=NA,lambda=NA);
 		}
     class(re.tmp)<-"kmcS3";
 	return(re.tmp);
@@ -300,7 +318,7 @@ kmc.bjtest<-function(
 
 plotkmc2D <-function(resultkmc,flist=list(f1=function(x){x},f2=function(x){x^2}),range0=c(0.2,3,20)){
 	tmp.df=length(resultkmc$g);
-	xx<-resultkmc[["-2llr"]];
+	xx<-resultkmc[["-2LLR"]];
 	xl<-seq(0,max(6,xx+2),0.01)
 	plot(xl,dchisq(xl,df=tmp.df),type='l',main='Kaplan-Meier Estimator with Constraint',xlab="X",ylab="Probabilty");
 	points(xx,dchisq(xx,df=tmp.df),col='red',lty=2,type='h');

@@ -1,3 +1,7 @@
+check_G_mat <- function(gmat){
+    .Call('kmcRCPP_RevCHECK',PACKAGE='kmc',gmat)
+}
+
 lambdaoo<-function(kmctime,delta,lambda,gtmat){
 .Call('kmcomegalambda', PACKAGE = 'kmc',kmctime,delta,lambda,gtmat)
 }

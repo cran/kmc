@@ -1,17 +1,17 @@
 \name{kmc.bjtest}
 \alias{kmc.bjtest}
 \title{
-Calculate NPMLE with constriants for accelerated failure time model with given coefficients.
+Calculate the NPMLE with constriants for accelerated failure time model with given coefficients.
 }
 \description{
-Use the empirical likelihood ratio and Wilks theorem to test if the regression coefficient is equal to
-beta.
+Use the empirical likelihood ratio and Wilks theorem to test if the regression coefficient equals
+beta. 
 \deqn{El(F)=\prod_{i=1}^{n}(\Delta F(T_i))^{\delta_i}(1-F(T_i))^{1-\delta_i}}
 with constraints
 \deqn{
 	\sum_i g(T_i)\Delta F(T_i)=0,\quad,i=1,2,\ldots
 }
-Instead of EM algorithm, this function calculate the Kaplan-Meier estimator with mean constraints recursively to test \eqn{H_0:~\beta=\beta_0} in accelerated failure time model:
+Instead of EM algorithm, this function calculates the Kaplan-Meier estimator with mean constraints recursively to test \eqn{H_0:~\beta=\beta_0} in the accelerated failure time model:
 \deqn{
 	\log(T_i) = y_i = x_i\beta^\top + \epsilon_i,
 }
@@ -34,9 +34,9 @@ kmc.bjtest(y, d, x, beta,init.st="naive")
   \item{beta}{
       The value of the regression coeffiecnt vector (length p) to be tested.
 }
-
+  
   \item{init.st}{
-Type of methods to initialize the algorithm. Default uses 1/n
+Type of methods to initialize the algorithm. By default, init.st is set to 1/n
 }
 }
 \details{
@@ -56,13 +56,13 @@ The empirical likelihood is the likelihood of the error term when the coefficien
  \item{"-2LLR"}{
  	the -2 loglikelihood ratio; have approximate chisq distribution under null hypotheses
  }
-
+ 
 }
 \references{
 Buckley, J. and James, I. (1979). Linear regression with censored data. \emph{Biometrika}, \bold{66} 429-36
 
 Zhou, M., & Li, G. (2008).
-Empirical likelihood analysis of the Buckley-James estimator.
+Empirical likelihood analysis of the Buckley-James estimator. 
 \emph{Journal of multivariate analysis}, \bold{99(4)}, 649-664.
 
 Zhou, M. and Yang, Y. (2015).
@@ -77,10 +77,11 @@ A recursive formula for the Kaplan-Meier estimator with mean constraints and its
 
 
 \seealso{
-	  	\code{\link{plotkmc2D}}, \code{\link{print.kmcS3}} \code{\link[emplik]{bjtest}}.
+	  	\code{\link{plotkmc2D}}, \code{\link[emplik]{bjtest}}.
 }
 \examples{
 x <- c( 1, 1.5, 2, 3, 4.2, 5.0, 6.1, 5.3, 4.5, 0.9, 2.1, 4.3) # positive time
 d <- c( 1,   1, 0, 1, 0, 1, 1, 1, 1, 0, 0,   1)               # status censored/uncensored
 
 }
+

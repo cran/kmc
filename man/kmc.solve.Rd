@@ -2,9 +2,10 @@
 \alias{kmc.solve}
 \title{
 Calculate NPMLE with constriants for right censored data
+    %%  ~~function to do ... ~~
 }
 \description{
-This function calculate the Kaplan-Meier estimator with mean constraints recursively.
+This function calculate the Kaplan-Meier estimator with mean constraints recursively. 
 \deqn{El(F)=\prod_{i=1}^{n}(\Delta F(T_i))^{\delta_i}(1-F(T_i))^{1-\delta_i}}
 with constraints
 \deqn{\sum_i g(T_i)\Delta F(T_i)=0,\quad,i=1,2,...}
@@ -18,25 +19,25 @@ kmc.solve(x, d, g, em.boost = T, using.num = T, using.Fortran =
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-      Possitive time
+     Non-negative real vector. The observed time.
 }
   \item{d}{
-      Status, 0: right censored; 1 uncensored
+      0/1 vector. Censoring status indictator, 0: right censored; 1 uncensored
 }
   \item{g}{
-list of contraint functions. It should be a list of functions list(f1,f2,...)
+list of contraint functions. It should be a list of functions list(f1,f2,...) 
 }
   \item{em.boost}{
-  	 logical asking whether to use EM to get the initial value, default=TRUE. See 'Details' for EM control.
+  	 A logical value. It determines whether the EM algorithm is used to get the initial value, default=TRUE. See 'Details' for EM control.
 }
 \item{using.num}{
-  	 logical asking whether to use numeric derivative in iterations, default=TRUE.
+  	 A logical value. It determines whether the numeric derivatives is used in iterations, default=TRUE.
 }
 \item{using.Fortran}{
-  	 logical asking whether to use Fortran in root solving, default=F.
+  	 A logical value. It determines whether Fortran is used in root solving, default=F.
 }
 \item{using.C}{
-	logical asking whether to use Rcpp in iteraruib, default=T. This option will promote the performance of KMC algorithm. Development version works on one constraint only, otherwise it will generate a Error information. It won't work on using.num=F.
+	A logical value. It determines whether to use Rcpp in iteraruib, default=T. This option will promote the computational efficiency of the KMC algorithm. Development version works on one constraint only, otherwise it will generate a Error information. It won't work on using.num=F.
 }
 \item{tmp.tag}{
 	Development version needs it, keep it as TRUE.
@@ -45,31 +46,31 @@ list of contraint functions. It should be a list of functions list(f1,f2,...)
 	Tolerance used in rootSolve(multiroot) package, see 'rootSolve::multiroot'.
 }
 \item{control}{
-  nr.it controls max iterations allowed in N-R algorithm default=20, nr.c is the scaler used in N-R algorithm default=1,em.it is max iteration if use EM algorithm (em.boost) to get the initial value of lambda, default=3.
+  A list. The entry nr.it controls max iterations allowed in N-R algorithm default=20; nr.c is the scaler used in N-R algorithm default=1; em.it is max iteration if use EM algorithm (em.boost) to get the initial value of lambda, default=3.
 }
 \item{...}{
 Unspecified yet.
 }
 }
 \details{
-The development version won't check the constraint is proper or not. Besides, an extrordinary large number will be generated when numeric method/constraint(s) fails.
+The function check_G_mat checks whether the solution space is null or not under the constraint. But due to the computational complexity, it will detect at most two conditions.
 }
 \value{
- a list with the following components:
+ A list with the following components:
  \item{loglik.ha}{
- 	log empirical  likelihood without constraints
+ 	The log empirical  likelihood without constraints
  }
  \item{loglik.h0}{
- 	log empirical likelihood with constraints
+ 	The log empirical likelihood with constraints
  }
- \item{"-2llr"}{
- 	-2 Log empirical likelihood
+ \item{"-2LLR"}{
+ 	The -2 Log empirical likelihood ratio
  }
  \item{phat}{
  	\deqn{\Delta F(T_i)}
  }
  \item{pvalue}{
-  p-value of the test
+  The p-value of the test
  }
  \item{df}{
   Degree(s) of freedom. It equals the number of constraints.
@@ -91,7 +92,7 @@ A recursive formula for the Kaplan-Meier estimator with mean constraints and its
 
 
 \seealso{
-	  	\code{\link{plotkmc2D}}, \code{\link{print.kmcS3}}.
+	  	\code{\link{plotkmc2D}}.
 }
 \examples{
 x <- c( 1, 1.5, 2, 3, 4.2, 5.0, 6.1, 5.3, 4.5, 0.9, 2.1, 4.3) # positive time
@@ -101,7 +102,7 @@ d <- c( 1,   1, 0, 1, 0, 1, 1, 1, 1, 0, 0,   1)               # status censored/
 # dim =1
 #################
 
-f<-function(x) { x-3.7}                                       # \sum f(ti) wi ~ 0
+f<-function(x) { x-3.7}                                       # \sum f(ti) wi ~ 0 
 g=list( f=f) ;                                                #define constraint as a list
 
 kmc.solve( x,d,g) ;                                           #using default
@@ -111,13 +112,35 @@ kmc.solve( x,d,g,using.C=TRUE) ;                              #using Rcpp
 # dim =2
 #################
 
-myfun5 <- function( x)  {
+myfun5 <- function( x)  { 
  x^2-16.5
+} 
+
+g = list( f1=f,f2=myfun5) ;                                     #define constraint as a list
+
+re0 <- kmc.solve( x,d,g);
+
+#################
+# Print Estimation and other information 
+# with option: digits = 5
+#################
+f_print <- function(x, digits = 5){
+        cat("\n---------------------------------------------------------------------------------\n")
+        cat("A Recursive Formula for the Kaplan-Meier Estimator with Constraint\n")
+        cat("Information:\n")
+        cat("Number of Constraints:\t", length(x$g), "\n")
+        cat("lamda(s):\t",x$lambda,'\n');
+        cat("\n---------------------------------------------------------------------------------\n")
+        names <- c("Log-likelihood(Ha)", "Log-likelihood(H0)",
+        "-2LLR", paste("p-Value(df=", length(x$g), ")",sep = ""))
+        re <- matrix(c(x[[1]], x[[2]], x[[3]], 1 - pchisq(x[[3]],
+        length(x$g))), nrow = 1)
+        colnames(re) <- names
+        rownames(re) <- "Est"
+        print.default(format(re, digits = digits), print.gap = 2,
+        quote = FALSE, df = length(x$g))
+        cat("---------------------------------------------------------------------------------\n")
 }
-g=list( f1=f,f2=myfun5) ;                                     #define constraint as a list
-kmc.solve( x,d,g) ->re0;
-print(re0);                                                   #print method, plain ASCII
-print(re0,5);                                                 #print method, digits=5,plain ASCII
-print(re0,type='md');                                         #print method, output GIT Markdown
-#summary(re0) is under developing.
+f_print(re0)
+
 }
