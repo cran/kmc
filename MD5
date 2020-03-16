@@ -1,4 +1,4 @@
-391105be6cf601b2f2caafbe09c63fe3 *DESCRIPTION
+cb7e08abaf011a19f0ebaa8ff7a01ebb *DESCRIPTION
 644cd0d9823b4b663a8fdc40cde13109 *NAMESPACE
 2b622f7ec157b3fa263076fb3046d3dc *R/RcppExport.R
 01466a8d2493a19a20869e98fbd6f2d1 *R/kmc.R
@@ -13,4 +13,4 @@ b62ee8ab6819686132a7413d4dbfc55f *src/common.h
 07b0b71a1512dee365540c4dc94a9bb1 *src/common_kmc.h
 fcee796e623571710973eaf0074e5b42 *src/kmc.cpp
 60c5263fee77641e126d2b2c03d41e94 *src/kmc_init.c
-5bbdd9269e270457fc6518fc799acbff *src/surv2.c
+dc14a431c3472061d72efd4e00f8ee56 *src/surv2.c

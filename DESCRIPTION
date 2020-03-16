@@ -1,5 +1,5 @@
 Package: kmc
-Version: 0.2-3
+Version: 0.2-4
 Title: Kaplan-Meier Estimator with Constraints for Right Censored Data
         -- a Recursive Computational Algorithm
 Author: Yifan Yang <yifan.yang@transwarp.io> , Mai Zhou<mai@ms.uky.edu>
@@ -10,6 +10,6 @@ License: LGPL-3
 Depends: R (>= 2.13.1), compiler, rootSolve, emplik
 LinkingTo: Rcpp
 NeedsCompilation: yes
-Packaged: 2019-04-24 09:29:26.930 UTC; yifanyang
+Packaged: 2020-03-12 09:06:56.467 UTC; yifanyang
 Repository: CRAN
-Date/Publication: 2019-04-24 11:50:03 UTC
+Date/Publication: 2020-03-16 13:30:02 UTC
